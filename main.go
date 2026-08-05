@@ -7,6 +7,7 @@ import (
 
 	"github.com/Nehasirohi07/devSync/config"
 	"github.com/Nehasirohi07/devSync/database"
+	"github.com/Nehasirohi07/devSync/routes"
 )
 
 func main() {
@@ -17,7 +18,9 @@ func main() {
 
 	log.Printf("Server running on port %s", cfg.Port)
 
-	err := http.ListenAndServe(":"+cfg.Port, nil)
+	router := routes.NewRouter()
+
+	err := http.ListenAndServe(":"+cfg.Port, router)
 
 	if err != nil {
 		log.Fatal("Server failed to start:", err)
