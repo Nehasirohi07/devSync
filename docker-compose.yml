@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: devsync-mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+
+    ports:
+      - "${DB_PORT}:3306"
+
+    volumes:
+      - devsync_mysql_data:/var/lib/mysql
+
+volumes:
+  devsync_mysql_data:
