@@ -7,5 +7,5 @@ CREATE TABLE activities(
 
     FOREIGN KEY (user_id)
         REFERENCES users(id)
-        ON DELETE RESTRICT,
+        ON DELETE RESTRICT
 );
