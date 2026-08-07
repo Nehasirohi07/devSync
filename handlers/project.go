@@ -180,3 +180,77 @@ func GetProjectByID(w http.ResponseWriter, r *http.Request) {
 	)
 
 }
+
+func UpdateProject(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	projectID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(w, http.StatusBadRequest, "Invalid project ID")
+		return
+	}
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "Invalid user")
+		return
+	}
+
+	var project models.Project
+
+	err = json.NewDecoder(r.Body).Decode(&project)
+
+	if err != nil {
+		utils.SendError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	result, err := database.DB.Exec(
+		`UPDATE projects
+		SET name = ?, description = ?
+		WHERE id = ? AND manager_id = ?`,
+		project.Name,
+		project.Description,
+		projectID,
+		userID,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to update project",
+		)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to check updated project",
+		)
+		return
+	}
+
+	if rowsAffected == 0 {
+		utils.SendError(
+			w,
+			http.StatusNotFound,
+			"Project not found",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Project updated successfully",
+		nil,
+	)
+}
