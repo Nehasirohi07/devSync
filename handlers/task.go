@@ -358,3 +358,76 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 	)
 
 }
+
+func DeleteTask(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	taskID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Invalid task ID",
+		)
+		return
+	}
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid user",
+		)
+		return
+	}
+
+	result, err := database.DB.Exec(
+		`DELETE T
+		FROM tasks t
+		JOIN projects p ON t.project_id = p.id
+		WHERE t.id = ? AND p.manager_id = ?`,
+		taskID,
+		userID,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to delete task",
+		)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to check deleted task",
+		)
+		return
+	}
+
+	if rowsAffected == 0 {
+		utils.SendError(
+			w,
+			http.StatusNotFound,
+			"Task not found",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Task deleted successfully",
+		nil,
+	)
+
+}
