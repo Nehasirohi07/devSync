@@ -254,3 +254,66 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 }
+
+func DeleteProject(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	projectID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(w, http.StatusBadRequest, "Invalid project ID")
+		return
+	}
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "Invalid user")
+		return
+	}
+
+	result, err := database.DB.Exec(
+		`DELETE FROM projects
+		WHERE id = ? AND manager_id = ?`,
+		projectID,
+		userID,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to delete project",
+		)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to check deleted project",
+		)
+		return
+	}
+
+	if rowsAffected == 0 {
+		utils.SendError(
+			w,
+			http.StatusNotFound,
+			"Project not found",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Project deleted successfully",
+		nil,
+	)
+
+}
