@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -83,4 +84,71 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+
+	var user models.User
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+
+	if err != nil {
+		utils.SendError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	var StoredUser models.User
+
+	err = database.DB.QueryRow(
+		"SELECT id, name , email , password , role FROM users WHERE email = ?",
+		user.Email,
+	).Scan(
+		&StoredUser.ID,
+		&StoredUser.Name,
+		&StoredUser.Email,
+		&StoredUser.Password,
+		&StoredUser.Role,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.SendError(w, http.StatusInternalServerError, "Invalid email or password")
+			return
+		}
+
+		utils.SendError(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	passwordMatch := utils.ComparePassword(
+		StoredUser.Password,
+		user.Password,
+	)
+
+	if !passwordMatch {
+		utils.SendError(w, http.StatusUnauthorized, "Invalid email or password")
+		return
+	}
+
+	cfg := config.LoadConfig()
+
+	token, err := utils.GenerateJWT(
+		StoredUser.ID,
+		StoredUser.Role,
+		cfg.JWTSecret,
+	)
+
+	if err != nil {
+		utils.SendError(w, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Login successfully",
+		map[string]interface{}{
+			"token": token,
+		},
+	)
 }
