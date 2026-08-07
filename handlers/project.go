@@ -26,6 +26,8 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	project = utils.SanitizeProject(project)
+
 	userID, ok := r.Context().Value("userID").(int)
 
 	if !ok {
@@ -34,6 +36,17 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	project.ManagerID = userID
+
+	err = utils.ValidateProject(project)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
 
 	result, err := database.DB.Exec(
 		`INSERT INTO projects (name , description, manager_id) VALUES(? , ? , ? )`,
@@ -48,6 +61,15 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	projectID, err := result.LastInsertId()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to get project ID",
+		)
+		return
+	}
 
 	project.ID = int(projectID)
 
@@ -205,6 +227,21 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		utils.SendError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	project = utils.SanitizeProject(project)
+
+	project.ManagerID = userID
+
+	err = utils.ValidateProject(project)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
 

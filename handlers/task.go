@@ -23,6 +23,19 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	task = utils.SanitizeTask(task)
+
+	err = utils.ValidateTask(task)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
 	userID, ok := r.Context().Value("userID").(int)
 
 	if !ok {
@@ -299,6 +312,19 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	task = utils.SanitizeTask(task)
+
+	err = utils.ValidateTask(task)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
 	result, err := database.DB.Exec(
 		`UPDATE tasks t
 		JOIN project p ON t.project_id = p.id
@@ -430,4 +456,182 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 		nil,
 	)
 
+}
+
+func GetMyTask(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid user",
+		)
+		return
+	}
+
+	rows, err := database.DB.Query(
+		`SELECT
+			id,
+			project_id,
+			assigned_to,
+			title,
+			description,
+			status,
+			progress,
+			created_at
+		FROM tasks
+		WHERE assigned_to = ?`,
+		userID,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch assigned tasks",
+		)
+		return
+	}
+
+	defer rows.Close()
+
+	var tasks []models.Task
+
+	for rows.Next() {
+
+		var task models.Task
+
+		err := rows.Scan(
+			&task.ID,
+			&task.ProjectID,
+			&task.AssignedTo,
+			&task.Title,
+			&task.Description,
+			&task.Status,
+			&task.Progress,
+			&task.CreatedAt,
+		)
+
+		if err != nil {
+			utils.SendError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to read task data",
+			)
+			return
+		}
+
+		tasks = append(tasks, task)
+
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Assigned tasks fetched successfully",
+		tasks,
+	)
+}
+
+func UpdateMyTaskProgress(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	taskID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Invalid task ID",
+		)
+		return
+	}
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid user",
+		)
+		return
+	}
+
+	var task models.Task
+
+	err = json.NewDecoder(r.Body).Decode(&task)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Invalid request body",
+		)
+		return
+	}
+
+	task = utils.SanitizeTask(task)
+
+	err = utils.ValidateTaskProgress(task)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
+	result, err := database.DB.Exec(
+		`UPDATE tasks
+		SET status = ?, progress = ?
+		WHERE id = ? AND assigned_to = ?`,
+		task.Status,
+		task.Progress,
+		taskID,
+		userID,
+	)
+
+	if err != nil {
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to update task progress",
+		)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to check update task",
+		)
+		return
+	}
+
+	if rowsAffected == 0 {
+		utils.SendError(
+			w,
+			http.StatusNotFound,
+			"Task not found or not assigned to you",
+		)
+		return
+	}
+	task.ID = taskID
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Task progress updated successfully",
+		task,
+	)
 }

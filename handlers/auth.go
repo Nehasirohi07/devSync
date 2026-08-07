@@ -97,6 +97,19 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user = utils.SanitizeUser(user)
+
+	err = utils.ValidateLoginUser(user)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
 	var StoredUser models.User
 
 	err = database.DB.QueryRow(
