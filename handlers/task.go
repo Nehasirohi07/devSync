@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/Nehasirohi07/devSync/database"
 	"github.com/Nehasirohi07/devSync/models"
 	"github.com/Nehasirohi07/devSync/utils"
+	"github.com/gorilla/mux"
 )
 
 func CreateTask(w http.ResponseWriter, r *http.Request) {
@@ -176,5 +178,84 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		"Task fetched successfully",
 		tasks,
+	)
+}
+
+func GetTaskByID(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	taskID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Invalid task ID",
+		)
+		return
+	}
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid user",
+		)
+		return
+	}
+
+	var task models.Task
+
+	err = database.DB.QueryRow(
+		`SELECT
+			t.id,
+			t.project_id,
+			t.assigned_to,
+			t.title,
+			t.description,
+			t.status,
+			t.progress,
+			t.created_at
+		FROM tasks t
+		JOIN projects p ON t.Project_id = p.id
+		WHERE t.id = ? AND p.manager_id = ?`,
+		taskID,
+		userID,
+	).Scan(
+		&task.ID,
+		&task.ProjectID,
+		&task.AssignedTo,
+		&task.Title,
+		&task.Description,
+		&task.Status,
+		&task.Progress,
+		&task.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusNotFound,
+				"Task not found",
+			)
+			return
+		}
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch task",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Task fetched successfully",
+		task,
 	)
 }
