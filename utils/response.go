@@ -11,7 +11,7 @@ type Response struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-func SendResponse(w http.ResponseWriter, statusCode int, message string, data interface{}) {
+func SendSuccess(w http.ResponseWriter, statusCode int, message string, data interface{}) {
 
 	response := Response{
 		Success: true,
