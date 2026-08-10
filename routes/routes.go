@@ -68,5 +68,23 @@ func NewRouter() *mux.Router {
 		handlers.GetTaskActivities,
 	).Methods("GET")
 
+	admin := protected.PathPrefix("/admin").Subrouter()
+	admin.Use(middleware.Admin)
+
+	admin.HandleFunc(
+		"/manager-requests",
+		handlers.GetManagerRequests,
+	).Methods("GET")
+
+	admin.HandleFunc(
+		"/manager-requests/{id}/approve",
+		handlers.ApproveManagerRequest,
+	).Methods("PUT")
+
+	admin.HandleFunc(
+		"/manager-requests/{id}/reject",
+		handlers.RejectManagerRequest,
+	).Methods("PUT")
+
 	return router
 }
