@@ -382,3 +382,68 @@ func RejectManagerRequest(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
+
+// GetMyManagerRequest godoc
+// @Summary Get my manager request
+// @Description Get the latest manager request submitted by the authenticated user.
+// @Tags Manager Requests
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/manager-request [get]
+func GetMyManagerRequest(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid user",
+		)
+		return
+	}
+
+	var request models.ManagerRequest
+
+	err := database.DB.QueryRow(
+		`SELECT id , user_id, status , created_at
+		FROM manager_requests
+		WHERE user_id = ?
+		ORDER BY id DESC
+		LIMIT 1`,
+		userID,
+	).Scan(
+		&request.ID,
+		&request.UserID,
+		&request.Status,
+		&request.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusNotFound,
+				"No manager request found",
+			)
+			return
+		}
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch manager request",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Manager request fetched successfully",
+		request,
+	)
+}

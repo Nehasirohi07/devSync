@@ -238,6 +238,33 @@ paths:
       summary: Delete a comment
       tags:
       - Comments
+  /api/manager-request:
+    get:
+      description: Get the latest manager request submitted by the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my manager request
+      tags:
+      - Manager Requests
   /api/manager-requests:
     post:
       description: Submit a request to become a manager.
@@ -265,6 +292,33 @@ paths:
       summary: Submit manager request
       tags:
       - Manager Requests
+  /api/me:
+    get:
+      description: Get details of the currently authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my profile
+      tags:
+      - Users
   /api/my-tasks:
     get:
       description: Get all tasks assigned to the authenticated employee.
@@ -873,6 +927,33 @@ paths:
       summary: Create a comment
       tags:
       - Comments
+  /api/users:
+    get:
+      description: Get employees for managers and employees plus managers for admins.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get users
+      tags:
+      - Users
   /health:
     get:
       description: Check whether the DevSync API is running.
