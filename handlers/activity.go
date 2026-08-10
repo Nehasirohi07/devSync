@@ -12,6 +12,22 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// CreateActivity godoc
+// @Summary Create task activity
+// @Description Create an activity entry for a task. Only the assigned employee or project manager can create activity.
+// @Tags Activities
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Param activity body models.Activity true "Activity details"
+// @Success 201 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id}/activities [post]
 func CreateActivity(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -143,6 +159,20 @@ func CreateActivity(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetTaskActivities godoc
+// @Summary Get task activities
+// @Description Get activity history for a task. Only the assigned employee or project manager can view it.
+// @Tags Activities
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id}/activities [get]
 func GetTaskActivities(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -174,9 +204,10 @@ func GetTaskActivities(w http.ResponseWriter, r *http.Request) {
 
 	err = database.DB.QueryRow(
 		`SELECT t.assigned_to, p.manager_id
-		FROM task t
+		FROM tasks t
 		JOIN projects p ON t.project_id = p.id
 		WHERE t.id = ?`,
+		taskID,
 	).Scan(&assignedTo, &managerID)
 
 	if err != nil {
@@ -207,7 +238,7 @@ func GetTaskActivities(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := database.DB.Query(
-		`SELECT id, user_id, task_is, action , created_at
+		`SELECT id, user_id, task_id, action , created_at
 		FROM activities
 		WHERE task_id  = ?
 	 	ORDER BY created_at ASC`,

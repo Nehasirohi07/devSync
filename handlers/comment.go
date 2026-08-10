@@ -12,6 +12,21 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// CreateComment godoc
+// @Summary Create a comment
+// @Description Add a comment to a task.
+// @Tags Comments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Param comment body models.Comment true "Comment details"
+// @Success 201 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id}/comments [post]
 func CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -124,6 +139,20 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetTaskComments godoc
+// @Summary Get task comments
+// @Description Get comments for a task. Only the assigned employee or project manager can view them.
+// @Tags Comments
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id}/comments [get]
 func GetTaskComments(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -241,6 +270,19 @@ func GetTaskComments(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// DeleteComment godoc
+// @Summary Delete a comment
+// @Description Delete a comment created by the authenticated user.
+// @Tags Comments
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Comment ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/comments/{id} [delete]
 func DeleteComment(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)

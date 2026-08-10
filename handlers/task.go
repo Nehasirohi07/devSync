@@ -12,6 +12,21 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// CreateTask godoc
+// @Summary Create a task
+// @Description Create a new task inside a project and assign it to an employee.
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param task body models.Task true "Task details"
+// @Success 201 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks [post]
 func CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	var task models.Task
@@ -118,6 +133,16 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetTask godoc
+// @Summary Get manager tasks
+// @Description Get all tasks belonging to projects managed by the authenticated manager.
+// @Tags Tasks
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks [get]
 func GetTask(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value("userID").(int)
@@ -142,7 +167,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 			t.progress,
 			t.created_at
 		FROM tasks t
-		JOIN project p ON t.project_id = p.id
+		JOIN projects p ON t.project_id = p.id
 		WHERE p.Manager_id = ?`,
 		userID,
 	)
@@ -194,6 +219,19 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// GetTaskByID godoc
+// @Summary Get task by ID
+// @Description Get a specific task belonging to a project managed by the authenticated manager.
+// @Tags Tasks
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id} [get]
 func GetTaskByID(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -273,6 +311,21 @@ func GetTaskByID(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// UpdateTask godoc
+// @Summary Update a task
+// @Description Update a task belonging to a project managed by the authenticated manager.
+// @Tags Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Param task body models.Task true "Updated task details"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id} [put]
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -327,7 +380,7 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	result, err := database.DB.Exec(
 		`UPDATE tasks t
-		JOIN project p ON t.project_id = p.id
+		JOIN projects p ON t.project_id = p.id
 		SET t.project_id = ?,
 			t.assigned_to= ?,
 			t.title = ?,
@@ -385,6 +438,19 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// DeleteTask godoc
+// @Summary Delete a task
+// @Description Delete a task belonging to a project managed by the authenticated manager.
+// @Tags Tasks
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/tasks/{id} [delete]
 func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -458,6 +524,16 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetMyTask godoc
+// @Summary Get my assigned tasks
+// @Description Get all tasks assigned to the authenticated employee.
+// @Tags Employee Tasks
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/my-tasks [get]
 func GetMyTask(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value("userID").(int)
@@ -535,6 +611,21 @@ func GetMyTask(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// UpdateMyTaskProgress godoc
+// @Summary Update task progress
+// @Description Update the status and progress of a task assigned to the authenticated employee.
+// @Tags Employee Tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Task ID"
+// @Param task body models.Task true "Task progress"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/my-tasks/{id}/progress [put]
 func UpdateMyTaskProgress(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)

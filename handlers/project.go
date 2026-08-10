@@ -15,6 +15,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// CreateProject godoc
+// @Summary Create a project
+// @Description Create a new project for the authenticated manager.
+// @Tags Projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param project body models.Project true "Project details"
+// @Success 201 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/projects [post]
 func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	var project models.Project
@@ -84,6 +97,16 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetProjects godoc
+// @Summary Get manager projects
+// @Description Get all projects belonging to the authenticated manager.
+// @Tags Projects
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/projects [get]
 func GetProjects(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value("userID").(int)
@@ -144,6 +167,19 @@ func GetProjects(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetProjectByID godoc
+// @Summary Get project by ID
+// @Description Get a specific project belonging to the authenticated manager.
+// @Tags Projects
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Project ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/projects/{id} [get]
 func GetProjectByID(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -165,7 +201,7 @@ func GetProjectByID(w http.ResponseWriter, r *http.Request) {
 	var project models.Project
 
 	err = database.DB.QueryRow(
-		"SELECT id, name , description , manager_id , created_at FROM projects WHERE = ? AND manager_id = ?",
+		"SELECT id, name , description , manager_id , created_at FROM projects WHERE id = ? AND manager_id = ?",
 		projectID,
 		userID,
 	).Scan(
@@ -203,6 +239,21 @@ func GetProjectByID(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// UpdateProject godoc
+// @Summary Update a project
+// @Description Update a project belonging to the authenticated manager.
+// @Tags Projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Project ID"
+// @Param project body models.Project true "Updated project details"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/projects/{id} [put]
 func UpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -292,6 +343,19 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// DeleteProject godoc
+// @Summary Delete a project
+// @Description Delete a project belonging to the authenticated manager.
+// @Tags Projects
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Project ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/projects/{id} [delete]
 func DeleteProject(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)

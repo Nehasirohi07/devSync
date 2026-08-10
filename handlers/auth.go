@@ -11,6 +11,17 @@ import (
 	"github.com/Nehasirohi07/devSync/utils"
 )
 
+// Register godoc
+// @Summary Register a new employee
+// @Description Register a new employee account. The role is automatically set to employee.
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User registration details"
+// @Success 201 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /register [post]
 func Register(w http.ResponseWriter, r *http.Request) {
 
 	var user models.User
@@ -88,6 +99,18 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Login with email and password and receive a JWT token.
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param user body models.User true "Login credentials"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /login [post]
 func Login(w http.ResponseWriter, r *http.Request) {
 
 	var user models.User

@@ -13,5 +13,24 @@ services:
     volumes:
       - devsync_mysql_data:/var/lib/mysql
 
+  backend:
+    build: .
+    container_name: devsync-api
+
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT}
+
+    ports:
+      - "${PORT}:${PORT}"
+
+    depends_on:
+      - mysql
+
 volumes:
   devsync_mysql_data:

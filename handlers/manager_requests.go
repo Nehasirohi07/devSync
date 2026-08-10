@@ -11,7 +11,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateManagerRequest(w http.ResponseWriter, r http.Request) {
+// CreateManagerRequest godoc
+// @Summary Submit manager request
+// @Description Submit a request to become a manager.
+// @Tags Manager Requests
+// @Produce json
+// @Security BearerAuth
+// @Success 201 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 409 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/manager-requests [post]
+func CreateManagerRequest(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value("userID").(int)
 
@@ -96,6 +107,17 @@ func CreateManagerRequest(w http.ResponseWriter, r http.Request) {
 	)
 }
 
+// GetManagerRequests godoc
+// @Summary Get pending manager requests
+// @Description Get all pending requests submitted by users who want to become managers.
+// @Tags Manager Requests
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/admin/manager-requests [get]
 func GetManagerRequests(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := database.DB.Query(
@@ -159,6 +181,20 @@ func GetManagerRequests(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// ApproveManagerRequest godoc
+// @Summary Approve manager request
+// @Description Approve a pending manager request and change the user's role to manager.
+// @Tags Manager Requests
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Manager request ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/admin/manager-requests/{id}/approve [put]
 func ApproveManagerRequest(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -271,6 +307,20 @@ func ApproveManagerRequest(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// RejectManagerRequest godoc
+// @Summary Reject manager request
+// @Description Reject a pending manager request.
+// @Tags Manager Requests
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Manager request ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/admin/manager-requests/{id}/reject [put]
 func RejectManagerRequest(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)

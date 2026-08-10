@@ -36,6 +36,11 @@ func NewRouter() *mux.Router {
 	manager.HandleFunc("/tasks/{id}", handlers.UpdateTask).Methods("PUT")
 	manager.HandleFunc("/tasks/{id}", handlers.DeleteTask).Methods("DELETE")
 
+	protected.HandleFunc(
+		"/manager-requests",
+		handlers.CreateManagerRequest,
+	).Methods("POST")
+
 	// Employee routes
 	protected.HandleFunc("/my-tasks", handlers.GetMyTask).Methods("GET")
 	protected.HandleFunc(
