@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateComnnet(w http.ResponseWriter, r *http.Request) {
+func CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
