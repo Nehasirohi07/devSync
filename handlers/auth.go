@@ -31,7 +31,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Role = "user"
+	user.Role = "employee"
 
 	hashedPassword, err := utils.HashPassword(user.Password)
 
