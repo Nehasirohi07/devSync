@@ -26,6 +26,7 @@ func NewRouter() *mux.Router {
 	// Project routes - Manager only
 	manager.HandleFunc("/projects", handlers.CreateProject).Methods("POST")
 	manager.HandleFunc("/projects", handlers.GetProjects).Methods("GET")
+	manager.HandleFunc("/projects/{id}", handlers.GetProjectByID).Methods("GET")
 	manager.HandleFunc("/projects/{id}", handlers.UpdateProject).Methods("PUT")
 	manager.HandleFunc("/projects/{id}", handlers.DeleteProject).Methods("DELETE")
 

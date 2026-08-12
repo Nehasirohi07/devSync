@@ -447,6 +447,24 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	task.ID = taskID
 
+	_, err = database.DB.Exec(
+		`INSERT INTO activities (user_id, task_id, action, details)
+	VALUES (?, ?, ?, ?)`,
+		userID,
+		task.ID,
+		"task_updated",
+		"Task details updated by manager",
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Task updated but failed to create activity",
+		)
+		return
+	}
+
 	utils.SendSuccess(
 		w,
 		http.StatusOK,
@@ -495,16 +513,49 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := database.DB.Exec(
-		`DELETE T
-		FROM tasks t
-		JOIN projects p ON t.project_id = p.id
-		WHERE t.id = ? AND p.manager_id = ?`,
+	tx, err := database.DB.Begin()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to start transaction",
+		)
+		return
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO activities (user_id, task_id, action, details)
+	VALUES (?, ?, ?, ?)`,
+		userID,
+		taskID,
+		"task_deleted",
+		"Task deleted by manager",
+	)
+
+	if err != nil {
+		tx.Rollback()
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to create delete activity",
+		)
+		return
+	}
+
+	result, err := tx.Exec(
+		`DELETE t
+	FROM tasks t
+	JOIN projects p ON t.project_id = p.id
+	WHERE t.id = ? AND p.manager_id = ?`,
 		taskID,
 		userID,
 	)
 
 	if err != nil {
+		tx.Rollback()
+
 		utils.SendError(
 			w,
 			http.StatusInternalServerError,
@@ -516,6 +567,8 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 	rowsAffected, err := result.RowsAffected()
 
 	if err != nil {
+		tx.Rollback()
+
 		utils.SendError(
 			w,
 			http.StatusInternalServerError,
@@ -525,10 +578,23 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if rowsAffected == 0 {
+		tx.Rollback()
+
 		utils.SendError(
 			w,
 			http.StatusNotFound,
 			"Task not found",
+		)
+		return
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to complete task deletion",
 		)
 		return
 	}
@@ -561,6 +627,26 @@ func GetMyTask(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusUnauthorized,
 			"Invalid user",
+		)
+		return
+	}
+
+	role, ok := r.Context().Value("role").(string)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid role",
+		)
+		return
+	}
+
+	if role != "employee" {
+		utils.SendError(
+			w,
+			http.StatusForbidden,
+			"Only employees can access assigned tasks",
 		)
 		return
 	}
@@ -666,6 +752,26 @@ func UpdateMyTaskProgress(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusUnauthorized,
 			"Invalid user",
+		)
+		return
+	}
+
+	role, ok := r.Context().Value("role").(string)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid role",
+		)
+		return
+	}
+
+	if role != "employee" {
+		utils.SendError(
+			w,
+			http.StatusForbidden,
+			"Only employees can update task progress",
 		)
 		return
 	}
