@@ -118,3 +118,76 @@ func CreateAccountDeletionRequest(w http.ResponseWriter, r *http.Request) {
 	)
 
 }
+
+// GetAccountDeletionRequests godoc
+// @Summary Get account deletion requests
+// @Description Get all account deletion requests. Only admin can access.
+// @Tags Account Deletion
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/admin/account-deletion-requests [get]
+func GetAccountDeletionRequests(w http.ResponseWriter, r *http.Request) {
+
+	rows, err := database.DB.Query(
+		`SELECT
+		id,
+		user_id,
+		reason,
+		status,
+		created_at,
+		reviewed_by,
+		FROM account_deletion_requests
+		ORDER BY created_at DESC`,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch account deletion requests",
+		)
+		return
+	}
+
+	defer rows.Close()
+
+	var requests []models.AccountDeletionRequest
+
+	for rows.Next() {
+
+		var request models.AccountDeletionRequest
+
+		err := rows.Scan(
+			&request.ID,
+			&request.UserID,
+			&request.Reason,
+			&request.Status,
+			&request.CreatedAt,
+			&request.ReviewedAt,
+			&request.ReviewedBy,
+		)
+
+		if err != nil {
+			utils.SendError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to read account deletion request",
+			)
+			return
+		}
+
+		requests = append(requests, request)
+
+		utils.SendSuccess(
+			w,
+			http.StatusOK,
+			"Account deletion requests fetched successfully",
+			requests,
+		)
+
+	}
+}
