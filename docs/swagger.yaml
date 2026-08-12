@@ -57,6 +57,10 @@ definitions:
         type: string
       description:
         type: string
+      employee_email:
+        type: string
+      employee_name:
+        type: string
       id:
         type: integer
       progress:
@@ -281,6 +285,33 @@ paths:
       summary: Reject account deletion request
       tags:
       - Account Deletion
+  /api/admin/dashboard:
+    get:
+      description: Get overall system statistics for the authenticated admin.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get admin dashboard
+      tags:
+      - Dashboard
   /api/admin/manager-requests:
     get:
       description: Get all pending requests submitted by users who want to become
@@ -429,6 +460,60 @@ paths:
       summary: Delete a comment
       tags:
       - Comments
+  /api/dashboard/manager:
+    get:
+      description: Get dashboard statistics for the authenticated manager.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get manager dashboard
+      tags:
+      - Dashboard
+  /api/employee/dashboard:
+    get:
+      description: Get dashboard statistics for the authenticated employee.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get employee dashboard
+      tags:
+      - Dashboard
   /api/manager-request:
     get:
       description: Get the latest manager request submitted by the authenticated user.
