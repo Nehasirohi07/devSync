@@ -112,5 +112,15 @@ func NewRouter() *mux.Router {
 		handlers.GetAccountDeletionRequests,
 	).Methods("GET")
 
+	admin.HandleFunc(
+		"/account-deletion-requests/{id}/approve",
+		handlers.ApproveAccountDeletionRequest,
+	).Methods("PUT")
+
+	admin.HandleFunc(
+		"/account-deletion-requests/{id}/reject",
+		handlers.RejectAccountDeletionRequest,
+	).Methods("PUT")
+
 	return router
 }

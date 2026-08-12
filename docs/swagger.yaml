@@ -1,5 +1,22 @@
 basePath: /
 definitions:
+  models.AccountDeletionRequest:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      reason:
+        type: string
+      reviewed_at:
+        type: string
+      reviewed_by:
+        type: integer
+      status:
+        type: string
+      user_id:
+        type: integer
+    type: object
   models.Comment:
     properties:
       content:
@@ -49,10 +66,14 @@ definitions:
     properties:
       created_at:
         type: string
+      deleted_at:
+        type: string
       email:
         type: string
       id:
         type: integer
+      is_deleted:
+        type: boolean
       name:
         type: string
       password:
@@ -75,6 +96,155 @@ info:
   title: DevSync API
   version: "1.0"
 paths:
+  /api/account-deletion-request:
+    post:
+      consumes:
+      - application/json
+      description: Send a request to admin for account deletion.
+      parameters:
+      - description: Account deletion request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AccountDeletionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Create account deletion request
+      tags:
+      - Account Deletion
+  /api/admin/account-deletion-requests:
+    get:
+      description: Get all account deletion requests. Only admin can access.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get account deletion requests
+      tags:
+      - Account Deletion
+  /api/admin/account-deletion-requests/{id}/approve:
+    put:
+      description: Approve a user's account deletion request. Only admin can access.
+      parameters:
+      - description: Deletion Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Approve account deletion request
+      tags:
+      - Account Deletion
+  /api/admin/account-deletion-requests/{id}/reject:
+    put:
+      description: Reject a user's account deletion request. Only admin can access.
+      parameters:
+      - description: Deletion Request ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Reject account deletion request
+      tags:
+      - Account Deletion
   /api/admin/manager-requests:
     get:
       description: Get all pending requests submitted by users who want to become

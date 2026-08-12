@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/Nehasirohi07/devSync/database"
 	"github.com/Nehasirohi07/devSync/models"
 	"github.com/Nehasirohi07/devSync/utils"
+	"github.com/gorilla/mux"
 )
 
 // CreateAccountDeletionRequest godoc
@@ -190,4 +192,276 @@ func GetAccountDeletionRequests(w http.ResponseWriter, r *http.Request) {
 		)
 
 	}
+}
+
+// ApproveAccountDeletionRequest godoc
+// @Summary Approve account deletion request
+// @Description Approve a user's account deletion request. Only admin can access.
+// @Tags Account Deletion
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Deletion Request ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/admin/account-deletion-requests/{id}/approve [put]
+func ApproveAccountDeletionRequest(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	requestID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Invalid deletion request ID",
+		)
+		return
+	}
+
+	adminID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid admin",
+		)
+		return
+	}
+
+	var userID int
+	var status string
+
+	err = database.DB.QueryRow(
+		`SELECT user_id, status
+		FROM account_deletion_requests
+		WHERE id = ?`,
+		requestID,
+	).Scan(&userID, &status)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusNotFound,
+				"Deletion request not found",
+			)
+			return
+		}
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch deletion request",
+		)
+		return
+	}
+
+	if status != "pending" {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Deletion request has already been reviewed",
+		)
+		return
+	}
+
+	tx, err := database.DB.Begin()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to start transaction",
+		)
+		return
+	}
+
+	_, err = tx.Exec(
+		`UPDATE users
+		SET is_deleted = TRUE,
+			deleted_at = CURRENT_TIMESTAMP
+		WHERE id = ?`,
+		userID,
+	)
+
+	if err != nil {
+		tx.Rollback()
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to delete user account",
+		)
+		return
+	}
+
+	_, err = tx.Exec(
+		`UPDATE account_deletion_requests
+		SET status = 'approved',
+			reviewed_at = CURRENT_TIMESTAMP,
+			reviewed_by = ?
+		WHERE id = ?`,
+		adminID,
+		requestID,
+	)
+
+	if err != nil {
+		tx.Rollback()
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to update deletion request",
+		)
+		return
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to complete account deletion",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Account deletion request approved successfully",
+		nil,
+	)
+}
+
+// RejectAccountDeletionRequest godoc
+// @Summary Reject account deletion request
+// @Description Reject a user's account deletion request. Only admin can access.
+// @Tags Account Deletion
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Deletion Request ID"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/admin/account-deletion-requests/{id}/reject [put]
+func RejectAccountDeletionRequest(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	requestID, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Invalid deletion request ID",
+		)
+		return
+	}
+
+	adminID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid admin",
+		)
+		return
+	}
+
+	var status string
+
+	err = database.DB.QueryRow(
+		`SELECT status
+		FROM account_deletion_requests
+		WHERE id = ?`,
+		requestID,
+	).Scan(&status)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusNotFound,
+				"Deletion request not found",
+			)
+			return
+		}
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch deletion request",
+		)
+		return
+	}
+
+	if status != "pending" {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Deletion request has already been reviewed",
+		)
+		return
+	}
+
+	result, err := database.DB.Exec(
+		`UPDATE account_deletion_requests
+		SET status = 'rejected',
+			reviewed_at = CURRENT_TIMESTAMP,
+			reviewed_by = ?
+		WHERE id = ? AND status = 'pending'`,
+		adminID,
+		requestID,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to reject deletion request",
+		)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to check deletion request",
+		)
+		return
+	}
+
+	if rowsAffected == 0 {
+		utils.SendError(
+			w,
+			http.StatusNotFound,
+			"Deletion request not found or already reviewed",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Account deletion request rejected successfully",
+		nil,
+	)
 }

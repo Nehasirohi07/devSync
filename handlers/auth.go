@@ -138,7 +138,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var StoredUser models.User
 
 	err = database.DB.QueryRow(
-		"SELECT id, name , email , password , role FROM users WHERE email = ?",
+		"SELECT id, name , email , password , role,is_deleted FROM users WHERE email = ?",
 		user.Email,
 	).Scan(
 		&StoredUser.ID,
@@ -146,6 +146,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		&StoredUser.Email,
 		&StoredUser.Password,
 		&StoredUser.Role,
+		&StoredUser.IsDeleted,
 	)
 
 	if err != nil {
@@ -155,6 +156,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		}
 
 		utils.SendError(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	if StoredUser.IsDeleted {
+		utils.SendError(
+			w,
+			http.StatusForbidden,
+			"Your account has been deleted",
+		)
 		return
 	}
 

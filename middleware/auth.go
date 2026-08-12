@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"strings"
 
 	"github.com/Nehasirohi07/devSync/config"
+	"github.com/Nehasirohi07/devSync/database"
 	"github.com/Nehasirohi07/devSync/utils"
 )
 
@@ -33,6 +35,43 @@ func Auth(next http.Handler) http.Handler {
 
 		if err != nil {
 			utils.SendError(w, http.StatusUnauthorized, "Invalid or expired token")
+			return
+		}
+
+		var isDeleted bool
+
+		err = database.DB.QueryRow(
+			`SELECT is_deleted
+	 FROM users
+	 WHERE id = ?`,
+			claims.UserID,
+		).Scan(&isDeleted)
+
+		if err != nil {
+
+			if err == sql.ErrNoRows {
+				utils.SendError(
+					w,
+					http.StatusUnauthorized,
+					"User not found",
+				)
+				return
+			}
+
+			utils.SendError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to verify user account",
+			)
+			return
+		}
+
+		if isDeleted {
+			utils.SendError(
+				w,
+				http.StatusForbidden,
+				"Your account has been deleted",
+			)
 			return
 		}
 
