@@ -179,6 +179,8 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 			t.id,
 			t.project_id,
 			t.assigned_to,
+			u.name,
+			u.email,
 			t.title,
 			t.description,
 			t.status,
@@ -186,6 +188,7 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 			t.created_at
 		FROM tasks t
 		JOIN projects p ON t.project_id = p.id
+		JOIN users u ON t.assigned_to = u.id
 		WHERE p.Manager_id = ?`,
 		userID,
 	)
@@ -210,6 +213,8 @@ func GetTask(w http.ResponseWriter, r *http.Request) {
 			&task.ID,
 			&task.ProjectID,
 			&task.AssignedTo,
+			&task.EmployeeName,
+			&task.EmployeeEmail,
 			&task.Title,
 			&task.Description,
 			&task.Status,
@@ -283,6 +288,8 @@ func GetTaskByID(w http.ResponseWriter, r *http.Request) {
 			t.id,
 			t.project_id,
 			t.assigned_to,
+			u.name,
+			u.email,
 			t.title,
 			t.description,
 			t.status,
@@ -290,6 +297,7 @@ func GetTaskByID(w http.ResponseWriter, r *http.Request) {
 			t.created_at
 		FROM tasks t
 		JOIN projects p ON t.Project_id = p.id
+		JOIN users u ON t.assigned_to = u.id
 		WHERE t.id = ? AND p.manager_id = ?`,
 		taskID,
 		userID,
@@ -297,6 +305,8 @@ func GetTaskByID(w http.ResponseWriter, r *http.Request) {
 		&task.ID,
 		&task.ProjectID,
 		&task.AssignedTo,
+		&task.EmployeeName,
+		&task.EmployeeEmail,
 		&task.Title,
 		&task.Description,
 		&task.Status,
@@ -524,9 +534,42 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var exists int
+
+	err = tx.QueryRow(
+		`SELECT t.id
+		FROM tasks t
+		JOIN projects p ON t.project_id = p.id
+		WHERE t.id = ? AND p.manager_id = ?`,
+		taskID,
+		userID,
+	).Scan(&exists)
+
+	if err != nil {
+
+		tx.Rollback()
+
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusNotFound,
+				"Task not found",
+			)
+			return
+		}
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to verify task",
+		)
+		return
+	}
+
 	_, err = tx.Exec(
-		`INSERT INTO activities (user_id, task_id, action, details)
-	VALUES (?, ?, ?, ?)`,
+		`INSERT INTO activities
+		(user_id, task_id, action, details)
+		VALUES (?, ?, ?, ?)`,
 		userID,
 		taskID,
 		"task_deleted",
@@ -544,13 +587,11 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Delete the task.
 	result, err := tx.Exec(
-		`DELETE t
-	FROM tasks t
-	JOIN projects p ON t.project_id = p.id
-	WHERE t.id = ? AND p.manager_id = ?`,
+		`DELETE FROM tasks
+		WHERE id = ?`,
 		taskID,
-		userID,
 	)
 
 	if err != nil {
@@ -605,7 +646,6 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 		"Task deleted successfully",
 		nil,
 	)
-
 }
 
 // GetMyTask godoc
