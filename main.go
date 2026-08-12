@@ -33,6 +33,10 @@ func main() {
 	log.Printf("Server running on port %s", cfg.Port)
 
 	router := routes.NewRouter()
+	router.HandleFunc("/test-route", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ROUTE WORKING"))
+	}).Methods("GET")
 
 	router.PathPrefix("/swagger/").Handler(
 		httpSwagger.WrapHandler,

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/Nehasirohi07/devSync/database"
@@ -101,6 +102,8 @@ func GetAdminDashboard(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} utils.Response
 // @Router /api/dashboard/manager [get]
 func GetManagerDashboard(w http.ResponseWriter, r *http.Request) {
+
+	log.Println(">>> GetManagerDashboard HIT")
 
 	userID, ok := r.Context().Value("userID").(int)
 

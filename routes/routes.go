@@ -23,11 +23,6 @@ func NewRouter() *mux.Router {
 	manager := protected.PathPrefix("").Subrouter()
 	manager.Use(middleware.Manager)
 
-	manager.HandleFunc(
-		"/dashboard",
-		handlers.GetManagerDashboard,
-	).Methods("GET")
-
 	// Project routes - Manager only
 	manager.HandleFunc("/projects", handlers.CreateProject).Methods("POST")
 	manager.HandleFunc("/projects", handlers.GetProjects).Methods("GET")
@@ -60,6 +55,11 @@ func NewRouter() *mux.Router {
 	protected.HandleFunc(
 		"/manager-request",
 		handlers.GetMyManagerRequest,
+	).Methods("GET")
+
+	protected.HandleFunc(
+		"/dashboard/manager",
+		handlers.GetManagerDashboard,
 	).Methods("GET")
 
 	// Employee routes
