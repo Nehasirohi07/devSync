@@ -122,5 +122,10 @@ func NewRouter() *mux.Router {
 		handlers.RejectAccountDeletionRequest,
 	).Methods("PUT")
 
+	protected.HandleFunc(
+		"/account-deletion-request",
+		handlers.GetMyAccountDeletionRequest,
+	).Methods("GET")
+
 	return router
 }

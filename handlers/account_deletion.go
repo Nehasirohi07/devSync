@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Nehasirohi07/devSync/database"
 	"github.com/Nehasirohi07/devSync/models"
@@ -23,6 +24,7 @@ import (
 // @Success 201 {object} utils.Response
 // @Failure 400 {object} utils.Response
 // @Failure 401 {object} utils.Response
+// @Failure 403 {object} utils.Response
 // @Failure 409 {object} utils.Response
 // @Failure 500 {object} utils.Response
 // @Router /api/account-deletion-request [post]
@@ -39,15 +41,60 @@ func CreateAccountDeletionRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var isDeleted bool
+
+	err := database.DB.QueryRow(
+		`SELECT is_deleted
+	FROM users
+	WHERE id = ?`,
+		userID,
+	).Scan(&isDeleted)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusUnauthorized,
+				"User not found",
+			)
+			return
+		}
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to verify user account",
+		)
+		return
+	}
+
+	if isDeleted {
+		utils.SendError(
+			w,
+			http.StatusForbidden,
+			"Your account has already been deleted",
+		)
+		return
+	}
+
 	var request models.AccountDeletionRequest
 
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err = json.NewDecoder(r.Body).Decode(&request)
 
 	if err != nil {
 		utils.SendError(
 			w,
 			http.StatusBadRequest,
 			"Invalid request body",
+		)
+		return
+	}
+
+	if strings.TrimSpace(request.Reason) == "" {
+		utils.SendError(
+			w,
+			http.StatusBadRequest,
+			"Deletion reason is required",
 		)
 		return
 	}
@@ -136,14 +183,19 @@ func GetAccountDeletionRequests(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := database.DB.Query(
 		`SELECT
-		id,
-		user_id,
-		reason,
-		status,
-		created_at,
-		reviewed_by,
-		FROM account_deletion_requests
-		ORDER BY created_at DESC`,
+    		adr.id,
+    		adr.user_id,
+    		u.name,
+    		u.email,
+    		u.role,
+    		adr.reason,
+    		adr.status,
+    		adr.created_at,
+    		adr.reviewed_at,
+    		adr.reviewed_by
+		FROM account_deletion_requests adr
+		JOIN users u ON adr.user_id = u.id
+		ORDER BY adr.created_at DESC`,
 	)
 
 	if err != nil {
@@ -166,6 +218,9 @@ func GetAccountDeletionRequests(w http.ResponseWriter, r *http.Request) {
 		err := rows.Scan(
 			&request.ID,
 			&request.UserID,
+			&request.UserName,
+			&request.UserEmail,
+			&request.UserRole,
 			&request.Reason,
 			&request.Status,
 			&request.CreatedAt,
@@ -463,5 +518,82 @@ func RejectAccountDeletionRequest(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		"Account deletion request rejected successfully",
 		nil,
+	)
+}
+
+// GetMyAccountDeletionRequest godoc
+// @Summary Get my account deletion request
+// @Description Get the latest account deletion request of the authenticated user.
+// @Tags Account Deletion
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} utils.Response
+// @Failure 401 {object} utils.Response
+// @Failure 404 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /api/account-deletion-request [get]
+func GetMyAccountDeletionRequest(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value("userID").(int)
+
+	if !ok {
+		utils.SendError(
+			w,
+			http.StatusUnauthorized,
+			"Invalid user",
+		)
+		return
+	}
+
+	var request models.AccountDeletionRequest
+
+	err := database.DB.QueryRow(
+		`SELECT
+			id,
+			user_id,
+			reason,
+			status,
+			created_at,
+			reviewed_at,
+			reviewed_by
+		FROM account_deletion_requests
+		WHERE user_id = ?
+		ORDER BY created_at DESC
+		LIMIT 1`,
+		userID,
+	).Scan(
+		&request.ID,
+		&request.UserID,
+		&request.Reason,
+		&request.Status,
+		&request.CreatedAt,
+		&request.ReviewedAt,
+		&request.ReviewedBy,
+	)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			utils.SendError(
+				w,
+				http.StatusNotFound,
+				"No account deletion request found",
+			)
+			return
+		}
+
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to fetch account deletion request",
+		)
+		return
+	}
+
+	utils.SendSuccess(
+		w,
+		http.StatusOK,
+		"Account deletion request fetched successfully",
+		request,
 	)
 }
