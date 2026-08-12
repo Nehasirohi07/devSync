@@ -18,7 +18,7 @@ func ConnectDB() {
 	cfg := config.LoadConfig()
 
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s",
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
 
 		cfg.Database.User,
 		cfg.Database.Password,

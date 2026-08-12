@@ -106,7 +106,7 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(
 			w,
 			http.StatusInternalServerError,
-			"Failed to create task",
+			err.Error(),
 		)
 		return
 	}
@@ -123,6 +123,24 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task.ID = int(taskID)
+
+	_, err = database.DB.Exec(
+		`INSERT INTO activities (user_id, task_id, action, details)
+	VALUES (?, ?, ?, ?)`,
+		userID,
+		task.ID,
+		"task_created",
+		"Task created and assigned to employee",
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Task created but failed to create activity",
+		)
+		return
+	}
 
 	utils.SendSuccess(
 		w,
@@ -717,6 +735,25 @@ func UpdateMyTaskProgress(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+
+	_, err = database.DB.Exec(
+		`INSERT INTO activities (user_id, task_id, action, details)
+	VALUES (?, ?, ?, ?)`,
+		userID,
+		taskID,
+		"progress_updated",
+		"Task progress updated to "+strconv.Itoa(task.Progress)+"%",
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Task updated but failed to create activity",
+		)
+		return
+	}
+
 	task.ID = taskID
 
 	utils.SendSuccess(

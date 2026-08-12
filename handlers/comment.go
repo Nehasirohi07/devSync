@@ -68,8 +68,6 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	comment = utils.SanitizeComment(comment)
 
-	comment = utils.SanitizeComment(comment)
-
 	comment.TaskID = taskID
 	comment.UserID = userID
 	err = utils.ValidateComment(comment)
@@ -86,7 +84,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 	var taskExists int
 
 	err = database.DB.QueryRow(
-		"SELECT id FROM tasks WHERE id  = ?",
+		"SELECT id FROM tasks WHERE id = ?",
 		taskID,
 	).Scan(&taskExists)
 
@@ -99,44 +97,51 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 			)
 			return
 		}
-		result, err := database.DB.Exec(
-			`INSERT INTO comments (task_id, user_id, content)
-			VALUES( ?, ? , ?)`,
-			comment.TaskID,
-			comment.UserID,
-			comment.Content,
-		)
 
-		if err != nil {
-			utils.SendError(
-				w,
-				http.StatusInternalServerError,
-				"Failed to create comment",
-			)
-			return
-		}
-
-		commentID, err := result.LastInsertId()
-
-		if err != nil {
-			utils.SendError(
-				w,
-				http.StatusInternalServerError,
-				"Failed to get comment ID",
-			)
-			return
-		}
-
-		comment.ID = int(commentID)
-
-		utils.SendSuccess(
+		utils.SendError(
 			w,
-			http.StatusCreated,
-			"Comment created successfully",
-			comment,
+			http.StatusInternalServerError,
+			"Failed to check task",
 		)
-
+		return
 	}
+
+	result, err := database.DB.Exec(
+		`INSERT INTO comments (task_id, user_id, content)
+     VALUES (?, ?, ?)`,
+		comment.TaskID,
+		comment.UserID,
+		comment.Content,
+	)
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to create comment",
+		)
+		return
+	}
+
+	commentID, err := result.LastInsertId()
+
+	if err != nil {
+		utils.SendError(
+			w,
+			http.StatusInternalServerError,
+			"Failed to get comment ID",
+		)
+		return
+	}
+
+	comment.ID = int(commentID)
+
+	utils.SendSuccess(
+		w,
+		http.StatusCreated,
+		"Comment created successfully",
+		comment,
+	)
 }
 
 // GetTaskComments godoc

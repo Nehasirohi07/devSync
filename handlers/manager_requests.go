@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Nehasirohi07/devSync/database"
 	"github.com/Nehasirohi07/devSync/models"
@@ -36,17 +37,18 @@ func CreateManagerRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var existingRequest models.ManagerRequest
+	var createdAt []byte
 
 	err := database.DB.QueryRow(
 		`SELECT id, user_id, status, created_at
-		FROM manager_requests
-		WHERE user_id = ? AND status = 'pending'`,
+    FROM manager_requests
+    WHERE user_id = ? AND status = 'pending'`,
 		userID,
 	).Scan(
 		&existingRequest.ID,
 		&existingRequest.UserID,
 		&existingRequest.Status,
-		&existingRequest.CreatedAt,
+		&createdAt,
 	)
 
 	if err == nil {
@@ -62,7 +64,7 @@ func CreateManagerRequest(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(
 			w,
 			http.StatusInternalServerError,
-			"Failed to check existing request",
+			err.Error(),
 		)
 		return
 	}
@@ -94,9 +96,10 @@ func CreateManagerRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := models.ManagerRequest{
-		ID:     int(requestID),
-		UserID: userID,
-		Status: "pending",
+		ID:        int(requestID),
+		UserID:    userID,
+		Status:    "pending",
+		CreatedAt: time.Now(),
 	}
 
 	utils.SendSuccess(
@@ -131,7 +134,7 @@ func GetManagerRequests(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(
 			w,
 			http.StatusInternalServerError,
-			"Failed to fetch manager requests",
+			err.Error(),
 		)
 		return
 	}
@@ -410,11 +413,11 @@ func GetMyManagerRequest(w http.ResponseWriter, r *http.Request) {
 	var request models.ManagerRequest
 
 	err := database.DB.QueryRow(
-		`SELECT id , user_id, status , created_at
-		FROM manager_requests
-		WHERE user_id = ?
-		ORDER BY id DESC
-		LIMIT 1`,
+		`SELECT id, user_id, status, created_at
+    FROM manager_requests
+    WHERE user_id = ?
+    ORDER BY id DESC
+    LIMIT 1`,
 		userID,
 	).Scan(
 		&request.ID,
@@ -422,7 +425,6 @@ func GetMyManagerRequest(w http.ResponseWriter, r *http.Request) {
 		&request.Status,
 		&request.CreatedAt,
 	)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			utils.SendError(
@@ -435,7 +437,7 @@ func GetMyManagerRequest(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(
 			w,
 			http.StatusInternalServerError,
-			"Failed to fetch manager request",
+			err.Error(),
 		)
 		return
 	}

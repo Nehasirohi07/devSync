@@ -80,11 +80,6 @@ func NewRouter() *mux.Router {
 
 	protected.HandleFunc(
 		"/tasks/{id}/activities",
-		handlers.CreateActivity,
-	).Methods("POST")
-
-	protected.HandleFunc(
-		"/tasks/{id}/activities",
 		handlers.GetTaskActivities,
 	).Methods("GET")
 
