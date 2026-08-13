@@ -407,7 +407,6 @@ ADMIN_EMAIL=<admin-email>
 ADMIN_PASSWORD=<admin-password>
 ```
 
-> ⚠️ **Never commit `.env`** or expose passwords and JWT secrets publicly.
 
 ---
 
