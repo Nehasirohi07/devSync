@@ -223,10 +223,17 @@ func GetTaskComments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := database.DB.Query(
-		`SELECT id, task_id, user_id, content, created_at
-		FROM comments
-		WHERE task_id = ?
-		ORDER BY created_at ASC`,
+		`SELECT
+		c.id,
+		c.task_id,
+		c.user_id,
+		u.name,
+		c.content,
+		c.created_at
+	FROM comments c
+	JOIN users u ON c.user_id = u.id
+	WHERE c.task_id = ?
+	ORDER BY c.created_at ASC`,
 		taskID,
 	)
 
@@ -250,6 +257,7 @@ func GetTaskComments(w http.ResponseWriter, r *http.Request) {
 			&comment.ID,
 			&comment.TaskID,
 			&comment.UserID,
+			&comment.UserName,
 			&comment.Content,
 			&comment.CreatedAt,
 		)

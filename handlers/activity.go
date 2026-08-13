@@ -90,10 +90,18 @@ func GetTaskActivities(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := database.DB.Query(
-		`SELECT id, user_id, task_id, action , created_at
-		FROM activities
-		WHERE task_id  = ?
-	 	ORDER BY created_at ASC`,
+		`SELECT
+		a.id,
+		a.user_id,
+		u.name,
+		a.task_id,
+		a.action,
+		a.details,
+		a.created_at
+	FROM activities a
+	JOIN users u ON a.user_id = u.id
+	WHERE a.task_id = ?
+	ORDER BY a.created_at ASC`,
 		taskID,
 	)
 
@@ -117,11 +125,12 @@ func GetTaskActivities(w http.ResponseWriter, r *http.Request) {
 		err := rows.Scan(
 			&activity.ID,
 			&activity.UserID,
+			&activity.UserName,
 			&activity.TaskID,
 			&activity.Action,
+			&activity.Details,
 			&activity.CreatedAt,
 		)
-
 		if err != nil {
 			utils.SendError(
 				w,
